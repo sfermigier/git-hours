@@ -4,9 +4,9 @@ test:
 clean:
 	rm -rf dist
 
-build:
-	poerty build
+build: clean
+	poetry build
 
-upload: clean build
+upload: build
 	twine upload dist/*
 

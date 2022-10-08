@@ -24,13 +24,15 @@ Time spent on developing [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy.g
 }
 ```
 
-From a person working 8 hours per day, it would take more than 10 years to build Bootstrap.
+From a person working 8 hours per day, it would take more than 10 years to build SQLAlchemy.
 
 *Please note that the information is not be accurate enough to be used in billing.*
+
 
 ## Install
 
     $ pipx install git-hours
+
 
 
 ## How it works
