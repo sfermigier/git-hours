@@ -2,11 +2,15 @@ import json
 import subprocess
 
 
+def run(args=()):
+    args = " ".join(args)
+    cmd = f"python src/git_hours/main.py {args}".strip()
+    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    return json.load(proc.stdout)
+
+
 def test_it_should_output_json():
-    proc = subprocess.Popen(
-        "python src/git_hours/main.py", shell=True, stdout=subprocess.PIPE
-    )
-    work = json.load(proc.stdout)
+    work = run()
     assert work["total"]["hours"] > 0
     assert work["total"]["commits"] > 0
 

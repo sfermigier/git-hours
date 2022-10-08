@@ -1,5 +1,5 @@
 test:
-	echo "TODO"
+	pytest
 
 clean:
 	rm -rf dist
@@ -10,3 +10,5 @@ build: clean
 upload: build
 	twine upload dist/*
 
+format:
+	black src tests
