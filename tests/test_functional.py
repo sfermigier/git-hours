@@ -2,10 +2,13 @@ import json
 import subprocess
 
 
-def run(args=()):
-    args = " ".join(args)
-    cmd = f"python src/git_hours/main.py {args}".strip()
-    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+def run(extra_args=None):
+    args = ["python", "src/git_hours/main.py"]
+    if isinstance(extra_args, str):
+        args += [extra_args]
+    elif isinstance(extra_args, str):
+        args += list(extra_args)
+    proc = subprocess.Popen(args, stdout=subprocess.PIPE)
     return json.load(proc.stdout)
 
 
@@ -13,6 +16,13 @@ def test_it_should_output_json():
     work = run()
     assert work["total"]["hours"] > 0
     assert work["total"]["commits"] > 0
+
+
+def test_it_should_output_json_when_called_with_path():
+    work = run(".")
+    assert work["total"]["hours"] > 0
+    assert work["total"]["commits"] > 0
+
 
 
 # describe('git-hours', () => {
