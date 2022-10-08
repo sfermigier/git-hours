@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "git-hours"
-version = "0.1.2"
+version = "0.1.3"
 description = "Estimate time spent on a git repository "
 authors = ["Stefane Fermigier <sf@abilian.com>"]
 license = "GPL"
