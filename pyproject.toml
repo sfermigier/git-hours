@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "git-hours-py"
+version = "0.1.0"
+description = ""
+authors = ["Stefane Fermigier <sf@abilian.com>"]
+license = "GPL"
+readme = "README.md"
+packages = [{include = "git_hours_py"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydash = "^5.1.1"
+
+
+[tool.poetry.group.dev.dependencies]
+devtools = "^0.9.0"
+GitPython = "^3.1.28"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
