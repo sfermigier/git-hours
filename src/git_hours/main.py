@@ -35,16 +35,16 @@ def estimateHours(dates: list[datetime]) -> float:
         return 0
 
     # Oldest commit first, newest last
-    sortedDates = sorted(dates)
-    allButLast = sortedDates[0:-1]
+    sorted_dates = sorted(dates)
+    all_but_last = sorted_dates[0:-1]
 
     def f(hours, date, index):
-        nextDate = sortedDates[index + 1]
-        diffInMinutes = (nextDate - date) / 60
+        next_date = sorted_dates[index + 1]
+        diff_in_minutes = (next_date - date) / 60
 
         # Check if commits are counted to be in same coding session
-        if diffInMinutes < CONFIG["maxCommitDiffInMinutes"]:
-            return hours + diffInMinutes / 60
+        if diff_in_minutes < CONFIG["maxCommitDiffInMinutes"]:
+            return hours + diff_in_minutes / 60
 
         else:
             # The date difference is too big to be inside single coding session
@@ -52,7 +52,7 @@ def estimateHours(dates: list[datetime]) -> float:
             # so we make a blunt estimate of it
             return hours + CONFIG["firstCommitAdditionInMinutes"] / 60
 
-    totalHours = _.reduce_(allButLast, f, 0)
+    totalHours = _.reduce_(all_but_last, f, 0)
 
     return totalHours
 
@@ -61,8 +61,6 @@ def get_commits(gitPath, branch):
     repo = Repo(gitPath)
     commits = list(repo.iter_commits(branch))
     return commits
-
-
 
 
 def exit_if_shallow():
