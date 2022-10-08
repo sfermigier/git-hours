@@ -4,6 +4,9 @@ Estimate time spent on a git repository.
 
 Port to Python of the `git-hours` project by <https://github.com/kimmobrunfeldt/git-hours>.
 
+THIS PORT IS NOT COMPLETE YET. IF YOU WANT TO HELP, PLEASE DO SO.
+
+
 ## Example use
 
 Time spent on developing [SQLAlchemy](https://github.com/sqlalchemy/sqlalchemy.git):
@@ -36,40 +39,37 @@ The algorithm for estimating hours is quite simple. For each author in the commi
 
 <br><br>
 
-![](docs/step0.png)
+![](https://github.com/sfermigier/git-hours/raw/main/docs/step0.png)
 
 *Go through all commits and compare the difference between
 them in time.*
 
 <br><br><br>
 
-![](docs/step1.png)
+![](https://github.com/sfermigier/git-hours/raw/main/docs/step1.png)
 
 *If the difference is smaller or equal then a given threshold, group the commits
 to a same coding session.*
 
 <br><br><br>
 
-![](docs/step2.png)
+![](https://github.com/sfermigier/git-hours/raw/main/docs/step2.png)
 
 *If the difference is bigger than a given threshold, the coding session is finished.*
 
 <br><br><br>
 
-![](docs/step3.png)
+![](https://github.com/sfermigier/git-hours/raw/main/docs/step3.png)
 
 *To compensate the first commit whose work is unknown, we add extra hours to the coding session.*
 
 <br><br><br>
 
-![](docs/step4.png)
+![](https://github.com/sfermigier/git-hours/raw/main/docs/step4.png)
 
 *Continue until we have determined all coding sessions and sum the hours
 made by individual authors.*
 
-<br>
-
-The algorithm in [~30 lines of code](https://github.com/kimmobrunfeldt/git-hours/blob/8aaeee237cb9d9028e7a2592a25ad8468b1f45e4/index.js#L114-L143).
 
 ## Usage
 
