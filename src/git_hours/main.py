@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import json
 import os
 import sys
 from datetime import datetime
@@ -129,7 +129,7 @@ def main():
         "hours": totalHours,
         "commits": len(commits),
     }
-    pprint(sorted_work)
+    print(json.dumps(sorted_work, indent=2))
 
 
 if __name__ == "__main__":
