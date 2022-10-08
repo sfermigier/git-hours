@@ -1,73 +1,148 @@
 #!/usr/bin/env python3
+
 import os
 import sys
+from datetime import datetime
 
 import pydash as _
-from devtools import debug
+from devtools import debug, pprint
 from git import Repo
 
-# const Promise = require('bluebird');
-# const _ = require('lodash');
-# const fs = require('fs');
-# const git = require('nodegit');
-# const moment = require('moment');
-# const program = require('commander');
-
-DATE_FORMAT = 'YYYY-MM-DD'
-
 CONFIG = {
-  # Maximum time diff between 2 subsequent commits in minutes which are
-  ## counted to be in the same coding "session"
-  "maxCommitDiffInMinutes": 2 * 60,
-
-  # How many minutes should be added for the first commit of coding session
-  "firstCommitAdditionInMinutes": 2 * 60,
-
-  # Include commits since time x
-  "since": 'always',
-  "until": 'always',
-
-  # Include merge requests
-  "mergeRequest": True,
-
-  # Git repo
-  "gitPath": '.',
-
-  # Aliases of emails for grouping the same activity as one person
-  "emailAliases": {
-    'linus@torvalds.com': 'linus@linux.com',
-  },
-  "branch": None,
+    # Maximum time diff between 2 subsequent commits in minutes which are
+    ## counted to be in the same coding "session"
+    "maxCommitDiffInMinutes": 2 * 60,
+    # How many minutes should be added for the first commit of coding session
+    "firstCommitAdditionInMinutes": 2 * 60,
+    # Include commits since time x
+    "since": "always",
+    "until": "always",
+    # Include merge requests
+    "mergeRequest": True,
+    # Git repo
+    "gitPath": ".",
+    # Aliases of emails for grouping the same activity as one person
+    "emailAliases": {
+        "linus@torvalds.com": "linus@linux.com",
+    },
+    "branch": None,
 }
 
 
-# # Estimates spent working hours based on commit dates
-# def estimateHours(dates):
-#   if dates.length < 2:
-#     return 0
+# Estimates spent working hours based on commit dates
+def estimateHours(dates: list[datetime]) -> float:
+    if len(dates) <= 1:
+        return 0
+
+    # Oldest commit first, newest last
+    sortedDates = sorted(dates)
+    allButLast = sortedDates[0:-1]
+
+    def f(hours, date, index):
+        nextDate = sortedDates[index + 1]
+        diffInMinutes = (nextDate - date) / 60
+
+        # Check if commits are counted to be in same coding session
+        if diffInMinutes < CONFIG["maxCommitDiffInMinutes"]:
+            return hours + diffInMinutes / 60
+
+        else:
+            # The date difference is too big to be inside single coding session
+            # The work of first commit of a session cannot be seen in git history,
+            # so we make a blunt estimate of it
+            return hours + CONFIG["firstCommitAdditionInMinutes"] / 60
+
+    totalHours = _.reduce_(allButLast, f, 0)
+
+    return totalHours
+
+
+def get_commits(gitPath, branch):
+    repo = Repo(gitPath)
+    commits = list(repo.iter_commits(branch))
+    return commits
+
+
+
+
+def exit_if_shallow():
+    if os.path.exists(".git/shallow"):
+        print("Cannot analyze shallow copies!")
+        print("Please run git fetch --unshallow before continuing!")
+        sys.exit(1)
+
+
+def main():
+    exit_if_shallow()
+
+    config = CONFIG
+    if len(sys.argv) > 1:
+        config["gitPath"] = sys.argv[1]
+
+    # parseArgs()
+    #
+    # config = mergeDefaultsWithArgs(CONFIG)
+    # config.since = parseSinceDate(config.since)
+    # config.until = parseUntilDate(config.until)
+
+    # Poor man`s multiple args support
+    # https://github.com/tj/commander.js/issues/531
+    # for (let i = 0; i < process.argv.length; i += 1) {
+    #   const k = process.argv[i];
+    #   let n = i <= process.argv.length - 1 ? process.argv[i + 1] : undefined;
+    #   if (k === '-e' || k === '--email') {
+    #     parseEmailAlias(n);
+    #   } else if (k.startsWith('--email=')) {
+    #     n = k.substring(k.indexOf('=') + 1);
+    #     parseEmailAlias(n);
+    #   }
+    # }
+
+    commits = get_commits(config["gitPath"], config["branch"])
+
+    def get_email(commit):
+        email = commit.author.email or "unknown"
+        email_aliases = config.get("emailAliases", {})
+        if email in email_aliases:
+            return email_aliases[email]
+        else:
+            return email
+
+    commits_by_mail = _.group_by(commits, get_email)
+
+    def get_works(commits, email):
+        return {
+            "email": email,
+            "name": commits[0].author.name,
+            "hours": estimateHours(_.map_(commits, "committed_date")),
+            "no_commits": len(commits),
+        }
+
+    author_works = _.map_(commits_by_mail, get_works)
+    author_works = _.sort_by(author_works, "no_commits")
+
+    sorted_work = {
+        author_work["email"]: _.omit(author_work, "email")
+        for author_work in _.sort_by(author_works, "hours")
+    }
+
+    totalHours = sum([work["hours"] for work in author_works])
+    sorted_work["total"] = {
+        "hours": totalHours,
+        "commits": len(commits),
+    }
+    pprint(sorted_work)
+
+
+if __name__ == "__main__":
+    main()
+
+
 #
-#   # Oldest commit first, newest last
-#   sortedDates = dates.sort((a, b) => a - b)
-#   allButLast = _.take(sortedDates, sortedDates.length - 1)
+# From: https://github.com/kimmobrunfeldt/git-hours
+# TODO: port to Python
 #
-#   totalHours = _.reduce(allButLast, (hours, date, index) => {
-#     const nextDate = sortedDates[index + 1];
-#     const diffInMinutes = (nextDate - date) / 1000 / 60;
-#
-#     // Check if commits are counted to be in same coding session
-#     if (diffInMinutes < config.maxCommitDiffInMinutes) {
-#       return hours + diffInMinutes / 60;
-#     }
-#
-#     # The date difference is too big to be inside single coding session
-#     # The work of first commit of a session cannot be seen in git history,
-#     # so we make a blunt estimate of it
-#     return hours + config.firstCommitAdditionInMinutes / 60;
-#   }, 0);
-#
-#   return Math.round(totalHours)
-#
-#
+
 # def getBranchCommits(branchLatestCommit):
 #   return new Promise((resolve, reject) => {
 #     const history = branchLatestCommit.history();
@@ -125,12 +200,6 @@ CONFIG = {
 # def getAllReferences(repo):
 #   return repo.getReferenceNames(git.Reference.TYPE.ALL)
 
-
-# Promisify nodegit's API of getting all commits in repository
-def getCommits(gitPath, branch):
-  repo = Repo(gitPath)
-  commits = list(repo.iter_commits(branch))
-  return commits
 
 #   return git.Repository.open(gitPath)
 #     .then((repo) => {
@@ -288,80 +357,3 @@ def getCommits(gitPath, branch):
 #
 #   program.parse(process.argv);
 # }
-
-
-def exitIfShallow():
-  if os.path.exists('.git/shallow'):
-    print('Cannot analyze shallow copies!')
-    print('Please run git fetch --unshallow before continuing!')
-    sys.exit(1)
-
-
-def main():
-  exitIfShallow()
-
-  config = CONFIG
-
-  # parseArgs()
-  #
-  # config = mergeDefaultsWithArgs(CONFIG)
-  # config.since = parseSinceDate(config.since)
-  # config.until = parseUntilDate(config.until)
-
-  # Poor man`s multiple args support
-  # https://github.com/tj/commander.js/issues/531
-  # for (let i = 0; i < process.argv.length; i += 1) {
-  #   const k = process.argv[i];
-  #   let n = i <= process.argv.length - 1 ? process.argv[i + 1] : undefined;
-  #   if (k === '-e' || k === '--email') {
-  #     parseEmailAlias(n);
-  #   } else if (k.startsWith('--email=')) {
-  #     n = k.substring(k.indexOf('=') + 1);
-  #     parseEmailAlias(n);
-  #   }
-  # }
-
-  commits = getCommits(config['gitPath'], config['branch'])
-
-  debug(commits)
-
-#   getCommits(config.gitPath, config.branch).then((commits) => {
-#     commitsByEmail = _.groupBy(commits, (commit) => {
-#       email = commit.author.email or 'unknown'
-#       if (config.emailAliases !== undefined && config.emailAliases[email] !== undefined) {
-#         email = config.emailAliases[email];
-#       }
-#       return email
-#     });
-#
-#     authorWorks = _.map(commitsByEmail, (authorCommits, authorEmail) => ({
-#       email: authorEmail,
-#       name: authorCommits[0].author.name,
-#       hours: estimateHours(_.map(authorCommits, 'date')),
-#       commits: authorCommits.length,
-#     }));
-#
-#     # XXX: This relies on the implementation detail that json is printed
-#     # in the same order as the keys were added. This is anyway just for
-#     # making the output easier to read, so it doesn't matter if it
-#     # isn't sorted in some cases.
-#     sortedWork = {}
-#
-#     _.each(_.sortBy(authorWorks, 'hours'), (authorWork) => {
-#       sortedWork[authorWork.email] = _.omit(authorWork, 'email');
-#     });
-#
-#     totalHours = _.reduce(sortedWork, (sum, authorWork) => sum + authorWork.hours, 0);
-#
-#     sortedWork["total"] = {
-#       "hours": totalHours,
-#       "commits": commits.length,
-#     }
-#
-#     print(JSON.stringify(sortedWork, undefined, 2));
-#   }).catch((e) => {
-#     console.error(e.stack);
-#   });
-# }
-
-main()
