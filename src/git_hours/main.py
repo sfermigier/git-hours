@@ -4,7 +4,7 @@ import os
 import sys
 from datetime import datetime
 
-# import pydash as _
+import pydash as _
 from git import Repo
 
 CONFIG = {
