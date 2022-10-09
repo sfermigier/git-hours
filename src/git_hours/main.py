@@ -4,8 +4,7 @@ import os
 import sys
 from datetime import datetime
 
-import pydash as _
-from devtools import debug, pprint
+# import pydash as _
 from git import Repo
 
 CONFIG = {
@@ -116,8 +115,7 @@ def main():
             "no_commits": len(commits),
         }
 
-    author_works = _.map_(commits_by_mail, get_works)
-    author_works = _.sort_by(author_works, "no_commits")
+    author_works = _.chain(commits_by_mail).map(get_works).sort_by("no_commits").value()
 
     sorted_work = {
         author_work["email"]: _.omit(author_work, "email")

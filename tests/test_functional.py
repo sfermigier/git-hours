@@ -24,7 +24,6 @@ def test_it_should_output_json_when_called_with_path():
     assert work["total"]["commits"] > 0
 
 
-
 # describe('git-hours', () => {
 #
 #   // it('Should analyse since today', (done) => {
